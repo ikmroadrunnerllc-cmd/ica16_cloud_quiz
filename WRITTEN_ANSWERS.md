@@ -1,91 +1,54 @@
-# ICA16 written answers
-
-These answers describe the implementation and local rules observations. Device
-test references remain planned evidence until their observed results are filled
-in `TEST_LOG.md`.
+# ICA16 Written Answers
 
 ## 1. Two success layers
 
-The app checks more than whether an HTTP request returned. A status of 200 means
-the server returned a successful HTTP response, but the response body can still
-report an API error. After checking the status, the app decodes the JSON and
-requires `response_code` to be zero. It then requires exactly ten results. Each
-question must have the expected category, difficulty, and type, along with a
-nonempty question and four distinct answers after HTML decoding. This prevents a
-partly valid response from starting a round. The API-code fault deliberately
-changes the parsed response code to 5, while the fault label remains visible.
-T02 and T03 are the planned device evidence for this distinction; they have not
-yet been recorded. The [OpenTDB documentation](https://opentdb.com/api_config.php)
-describes its response codes and five-second rate limit.
+Just getting an HTTP status 200 does not mean the quiz data is good. Open Trivia DB can send an HTTP 200 even when there is an error, like response code 5 (rate limit) or response code 1 (no questions found). 
+
+So the app checks two layers:
+1. **Network Layer:** Makes sure the HTTP status code is 200.
+2. **Data Layer:** Parses the JSON and checks that `response_code == 0`, that there are exactly 10 questions, and that each question has 4 non-empty choices after decoding HTML entities (like `&quot;`). If any check fails, the round stops and asks to retry.
 
 ## 2. Unknown is not failed
 
-A timeout does not prove a write was rejected. The server might have committed
-the document even though the client did not receive a conclusive response. This
-app therefore uses a Save unknown state. It keeps the existing round ID and
-payload instead of creating another attempt. The Reconcile button performs a
-server-only read. Success requires a matching document, a resolved timestamp,
-and no pending writes or cache-only result. The lost-ack fault is an explicit
-simulation: it runs after the transaction returns, then routes the interface to
-Save unknown. T09 will check that reconciliation finds the same single document.
-That UI test is still pending. The local emulator tests already show that a valid
-stored document can be read later by its owner. See Firebase's
-[transaction guidance](https://firebase.google.com/docs/firestore/manage-data/transactions).
+A timeout or lost connection does not mean the save failed. The server might have saved the attempt, but our phone just never got the confirmation back.
+
+If we just treated that as a failure, the user might submit again and create duplicate records. Instead, the app moves to a **Save Unknown** screen. It keeps the current round ID and score, and shows a **Reconcile** button. Tapping Reconcile checks Firestore directly from the server. If the document is there, it marks it verified without writing a duplicate.
 
 ## 3. Retry identity
 
-The round ID is generated once when a round starts. Finishing the round freezes
-the six-field payload. Retrying a submission reuses both values. This matters
-because generating a fresh ID after an uncertain response could create duplicate
-documents. The transaction reads the chosen path before writing. If the document
-does not exist, it creates it. If an existing document matches the five stable
-fields, it reuses that attempt without changing its timestamp. Different values
-produce a collision instead of overwriting the original. A server read reporting
-no document allows Retry same attempt, which still uses the original ID. Even if
-an earlier operation later completes, the same-path transaction remains the
-idempotency mechanism. G01 and G02 are planned two-client checks of concurrency
-and collision behavior; they have not been run.
+When a quiz round starts, the app generates one unique round ID. When the user finishes question 10, the score is locked in.
+
+If the user has to retry submitting, the app uses that exact same round ID and score. In Firestore, a transaction checks the document path first:
+- If the document does not exist, it creates it.
+- If it already exists with the same score, it reuses it.
+- If it exists with a different score, it shows a collision error.
+
+This makes retrying safe and stops duplicates.
 
 ## 4. Cloud trust
 
-The rules establish ownership and document shape. They require the authenticated
-UID to match the user path, exactly six fields, fixed schema/category/variant
-values, ten questions, and an integer score between zero and ten. Creation also
-requires a server timestamp. Updates and deletes are denied. These checks do not
-prove the score was earned: a modified client can still submit an in-range score.
-A competitive system would need a trusted backend to issue the questions, verify
-the answers, and write the score. The current app is a client-scored class demo.
-Eight local emulator tests passed for the rule restrictions, but this is not a
-claim of server-authoritative scoring. Firebase documents the difference between
-client rule enforcement and privileged server access in its
-[security-rule conditions guide](https://firebase.google.com/docs/firestore/security/rules-conditions).
+Firestore security rules protect the database structure and access:
+- Users can only read and write their own attempts (`users/{uid}/attempts/{roundId}`).
+- Every attempt must have the 6 required fields and an integer score from 0 to 10.
+- Old attempts cannot be edited or deleted.
+
+However, because scoring happens on the phone, the rules cannot prove the user actually played the game honestly. For a real competitive game, a server would need to check the answers and calculate the score. In this class app, rules secure the storage format, but scoring is client-side.
 
 ## 5. Critique of the supplied recovery design
 
-The supplied rules reused one validator for both creation and reads. That
-validator required `submittedAt == request.time`. This is appropriate when
-accepting a new server timestamp, but an existing timestamp will normally differ
-from a later read time. It would block the read-back that the success screen
-depends on. The rules also needed to let an owner read a missing document so the
-create-once transaction could check for its absence. The revised rules separate
-stored-data validation from the creation-time requirement and explicitly permit
-that missing-document check. Local emulator tests passed for both corrected
-cases. Another issue was reading a verified document a second time to populate
-the success screen. The implementation now returns the checked snapshot's values
-from one read, with session guards after asynchronous work. These findings came
-from review and local testing, not invented device screenshots.
+The original starter code had two main bugs in the security rules:
+1. **Timestamp read bug:** The original rule checked `submittedAt == request.time` on both creates and reads. A saved timestamp is always in the past, so every time the app tried to read the saved attempt back, Firestore blocked it with permission denied. We fixed this by only checking `request.time` on create.
+2. **Transaction check bug:** Firestore transactions must read a document path before writing to it. The original rules blocked reading a document that did not exist yet, which made the transaction fail. We updated the rules to allow reading a missing document path.
+
+Also, the original app read the document twice after saving. We simplified it to read once directly from the server.
 
 ## 6. Design defense
 
-The interface separates committing, verifying, unknown, collision, and confirmed
-states because each state supports a different honest action. A successful
-transaction alone does not display Cloud verified. The app must first complete a
-matching server-only read. An ambiguous result offers reconciliation rather than
-replay with a fresh ID. A conflicting document is preserved and shown as a
-collision. Each asynchronous result is checked against the current signed-in UID,
-the screen's lifetime, and the current operation number. This prevents a result
-from a previous user or round from changing the current screen. The full round ID
-can be copied, and the history button can reopen a saved attempt after restart.
-Pending local state is not persisted, so restarting during an unresolved write
-still requires keeping the ID externally. Device evidence for these behaviors is
-planned in T07–T09 and G03 and remains to be collected.
+The app separates the save process into clear, honest steps:
+- **Submitting:** Transaction is running.
+- **Verifying:** Checking the server read-back.
+- **Cloud Verified:** Successfully saved and confirmed directly on the server.
+- **Save Unknown:** Network timed out; user can tap Reconcile.
+- **Collision:** A different score already exists for this ID.
+
+The app also uses session guards. If a user logs out while a save is in progress, the app drops the old response so it does not update the screen for the next user.

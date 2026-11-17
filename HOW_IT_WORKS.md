@@ -1,51 +1,32 @@
-# How the ICA16 app works
+# How the ICA16 App Works
 
-`main.dart` calls `startApp()` in `ica16_app.dart`. Firebase starts before the sign-in
-screen appears. If Firebase is not configured, a setup screen explains what is
-missing. The app uses email and password accounts already created in Firebase.
+This app is a Flutter quiz game that connects to Firebase Authentication and Cloud Firestore.
 
-After sign-in, the user's UID identifies where their attempts can be saved. The
-app asks Open Trivia Database for ten easy General Knowledge questions. It checks
-the HTTP status, JSON structure, API response code, and number of results. The
-question class checks category, difficulty, type, and all four decoded choices.
-An invalid round never reaches the play screen.
+## 1. Starting Up and Signing In
+- The app initializes Firebase first.
+- The user signs in using an email and password (accounts created in Firebase).
+- The user's UID determines their personal storage folder in Firestore (`users/{uid}/attempts/{roundId}`).
 
-Each question's answer choices are shuffled once. Tapping an answer saves its
-index. Further taps cannot score it again. Correct choices turn green and an
-incorrect selected choice turns red. The tenth answer opens a review of all ten
-questions and freezes the score payload.
+## 2. Getting Questions
+- The app requests 10 General Knowledge questions from the Open Trivia Database.
+- It checks that the HTTP status is 200 and the API response code is 0.
+- It decodes HTML special characters (like `&quot;` to `"`) and makes sure there are 4 distinct choices.
+- If there is any network or format error, it stops and lets the user retry.
 
-A round receives one Firestore-generated ID. Submit uses that ID in a transaction.
-The transaction reads first: a missing document is created; a matching document is
-reused; a different document produces a collision. It never overwrites an attempt.
-The callback does not generate IDs or change the screen because Firestore can
-run the callback more than once.
+## 3. Playing the Quiz
+- Answer choices are shuffled once for each question.
+- Tapping an answer locks it in: correct turns green, wrong turns red. You cannot tap again to change your answer or get extra points.
+- After question 10, the user reviews all 10 answers and the score is locked in.
 
-After submitting, the app reads the same document with `Source.server`. It checks
-the saved fields and timestamp and rejects pending or cache-only results. Only
-then does it show Cloud verified. The path, score, round ID, and timestamp on that
-screen come from the checked result.
+## 4. Saving the Score (Cloud Firestore)
+- The round gets a unique ID when it starts.
+- When saving, a Firestore transaction checks the database first:
+  - If the document is missing, it creates it.
+  - If it already exists with the same score, it reuses it safely.
+  - If it has a different score, it stops and warns of a collision.
+- After saving, the app reads the document back directly from the server (`Source.server`) to make sure it is actually saved before showing **Cloud Verified**.
 
-If the outcome is uncertain, the app keeps the round and offers reconciliation.
-It does not assume a timeout means failure. If a server read finds no document,
-Retry same attempt uses the original ID and payload. If different values exist,
-the app reports a collision and preserves them.
-
-The bug menu deliberately injects faults. The chosen fault stays visible. Use
-Restart round for request faults and Submit for write faults. Lost ack deliberately
-hides an acknowledged transaction from the UI so the recovery path can be tested.
-Unavailable and quota are injected errors, not proof of a real outage.
-
-Async callbacks check that the screen is still mounted, the operation is current,
-and the same user is signed in. A late result from another round or user is ignored.
-The stale-response fault signs out after submitting and resumes the old callback
-five seconds later to exercise that guard.
-
-Use the history icon to read a saved attempt by its full round ID after restart.
-The app does not maintain a local history or restore an unfinished round.
-
-The rules allow an owner to create a valid attempt and read a valid saved attempt.
-They also allow checking a missing attempt path, which the transaction needs.
-Updates, deletes, cross-user access, invalid fields, and listing are blocked.
-The rules check the server timestamp at creation; a later read only checks that
-it is a valid stored timestamp. The score is still client-computed.
+## 5. Handling Errors and Retries
+- **Save Unknown:** If a write times out or the connection drops, the app does not call it a failure. It offers a **Reconcile** button to check if the server actually received it.
+- **Fault Menu:** A bug icon lets you test different failure scenarios (bad JSON, lost acknowledgement, quota errors, etc.) to prove the app recovers cleanly.
+- **Session Protection:** If a user signs out while an operation is in progress, any delayed response is dropped so it does not change the next user's screen.

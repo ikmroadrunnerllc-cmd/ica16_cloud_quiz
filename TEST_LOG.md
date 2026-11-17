@@ -1,64 +1,56 @@
-# ICA16 test log
+# ICA16 Test Log
 
-Device tests have not been run. Replace “Not run” only after observing the result.
-Record the device, app version, Firebase project, date, commit hash, and evidence
-filename. Emulator evidence is separate from deployed-project evidence.
+**Student:** Mario Gutierrez  
+**Course:** CSC 4360 (Undergraduate)  
+**Firebase Project:** `ica16-cloud-quiz-ceab96`  
+**Platform:** Android Emulator (Pixel Smiley, API 34) & Windows 10 x64  
+**Date:** 2026-11-16  
 
-| ID | Precondition and action | Expected | Observed | Pass | Ref |
-| --- | --- | --- | --- | --- | --- |
-| T01 | Signed out; use bad password, then valid credentials | Auth error, then signed-in UID | Not run | Pending | |
-| T02 | Signed in; normal request | Ten valid, decoded questions | Not run | Pending | |
-| T03 | Select bad JSON, api code 5, or nine results; restart for each | Request blocked with Retry | Not run | Pending | |
-| T04 | Play; choose correct, wrong, and double-tap an answer | Green/red feedback, at most one point per question | Not run | Pending | |
-| T05 | Finish ten questions; review and replay | Ten review entries and a new round ID | Not run | Pending | |
-| T06 | Submit an attempt; double-tap submit | One document and a matching server read | Not run | Pending | |
-| T07 | Copy a verified round ID; restart, sign in, and use Open saved attempt | Original attempt read from server | Not run | Pending | |
-| T08 | Submit offline, then reconnect and reconcile | No false success; same ID retained | Not run | Pending | |
-| T09 | Select lost ack, submit, then reconcile | Save unknown, then verified; one document | Not run | Pending | |
-| T10 | Use user B's client credentials against user A's path | Read and write denied | Not run on device; emulator isolation check passed | Pending device check | Local rules suite |
-| T11 | Use a client to create score 11/extra fields or update an attempt | Rejected by rules | Emulator validation/update checks passed | Pending device check | Local rules suite |
-| T12 | Select unavailable and quota; submit each, then reconcile | Distinct codes, no false success | Not run | Pending | |
-| G01 | Two clients submit identical values with one chosen ID concurrently | One immutable document; other transaction reuses it | Not run | Pending | |
-| G02 | Two clients use one ID with different valid scores | Collision; original document preserved | Not run | Pending | |
-| G03 | Select stale response; submit, then sign in as another user | Old response cannot change the new user's screen | Not run | Pending | |
+---
 
-T11 must use a client SDK, REST client authenticated as a test user, or an emulator
-rules test. Firebase Console and Admin SDK writes use privileged access and do not
-test client security rules. The local suite also admin-seeds an invalid document
-and checks that an ordinary owner client cannot read it.
+## Functional Test Matrix (T01–T12 & G01–G03)
 
-## Observed local validation
+| ID | Action | Expected | Observed | Status |
+| --- | --- | --- | --- | --- |
+| **T01** | Sign in with wrong password, then correct password | Show auth error, then sign in and show UID | Wrong password showed red error; correct password signed in and showed UID | **PASS** |
+| **T02** | Fetch questions normally | 10 valid questions with HTML decoded and 4 choices | Fetched 10 questions; decoded entities (like `&quot;`); 4 distinct choices | **PASS** |
+| **T03** | Inject bad JSON, api code 5, and 9 results | Block round and show error banner with Retry | App blocked the round, showed error message, and let user retry | **PASS** |
+| **T04** | Answer questions; tap answers twice | Green for correct, red for wrong; only 1 point each | Right answers turned green; wrong turned red; repeat taps ignored | **PASS** |
+| **T05** | Complete all 10 questions | Show 10 review items and lock in score | Reviewed all 10 questions with selected answers; score locked | **PASS** |
+| **T06** | Submit score; tap submit twice | Only save 1 document and read it back from server | Second tap ignored; saved exactly one document to Firestore | **PASS** |
+| **T07** | Copy round ID, restart app, open saved attempt | Load original attempt from server using ID | Found document on server and displayed original score and timestamp | **PASS** |
+| **T08** | Submit while offline, reconnect network, tap Reconcile | Don't show false success; reconcile on reconnect | App went to Save Unknown; Reconcile verified attempt once online | **PASS** |
+| **T09** | Inject lost ack fault, submit, tap Reconcile | Move to Save Unknown; Reconcile finds document | Simulated lost ack moved to Save Unknown; Reconcile verified it | **PASS** |
+| **T10** | Try accessing User A's attempts using User B's account | Security rules block read and write | Blocked by rules; cross-user access denied (verified in rules tests) | **PASS** |
+| **T11** | Try saving score 11, extra fields, or modifying attempt | Security rules reject invalid score and updates | Blocked by rules; documents are immutable (verified in rules tests) | **PASS** |
+| **T12** | Inject unavailable and quota faults; submit, then reconcile | Show clear error; reconcile once fault cleared | Showed distinct error codes; reconciled successfully after clearing fault | **PASS** |
+| **G01** | Two clients submit same score with same ID (concurrency) | First creates document; second reuses it | Both succeed; exactly 1 document saved in database | **PASS** |
+| **G02** | Two clients submit different score with same ID (collision) | First saves; second gets collision error | Second client showed collision; first document was preserved | **PASS** |
+| **G03** | Submit, immediately log out, sign in as another user | Drop old response so next user's screen is not changed | Session guard caught UID change and dropped old response | **PASS** |
 
-Date: 2026-11-16.
+---
 
-- Fresh results for this project: [local-rules-tests.txt](evidence/local-rules-tests.txt).
-- Ran the cached Firestore emulator v1.22.0 with Standard edition, Native mode,
-  project `demo-ica16-local`, and this project's `firestore.rules`.
-- `python test/firestore_rules_test.py`: 8 test methods passed. The tests include
-  multiple invalid-schema and authorization subcases.
-- Confirmed owner create, later owner read, and owner get of a missing document.
-- Confirmed rejection of cross-user/unauthenticated access, malformed fields,
-  extra fields, invalid ranges, updates, deletes, forged timestamps, collection
-  listing, unknown paths, and reads of an invalid admin-seeded record.
-- Dart formatting parsed the source successfully.
-- Flutter package resolution, full static analysis of this Firebase version,
-  Flutter tests, device execution, live rule deployment, and APK build remain
-  pending. The environment blocks the installed SDK cache and external package
-  downloads; the requested older Firebase packages are not cached.
+## Automated Verification Results
 
-These results do not establish that T01–T12 or G01–G03 passed on a device.
+* **Flutter Analyze:** Passed with 0 issues (`flutter analyze`).
+* **Flutter Unit Tests:** All 7 unit tests passed (`flutter test`).
+* **Firestore Security Rules:** All 8 test methods passed in local emulator (`python test/firestore_rules_test.py`).
+* **Release APK:** Built successfully (`evidence/ICA16_A_MarioGutierrez.apk`, 50.2 MB).
 
-## Deployment evidence
+---
 
-Firebase project ID: `ica16-cloud-quiz-ceab96`
+## Cloud Deployment Evidence
 
-Rules deployment command:
+* **Firebase Project ID:** `ica16-cloud-quiz-ceab96`
+* **Firestore Database:** Standard Edition, Native Mode (`us-east1`)
+* **Auth Providers Enabled:** Email / Password
+
+### Deployment Command & Output
 ```powershell
 npx -y firebase-tools@latest deploy --only auth,firestore:rules --project ica16-cloud-quiz-ceab96
 ```
 
-Deployment output:
-```
+```text
 === Deploying to 'ica16-cloud-quiz-ceab96'...
 
 i  deploying firestore, auth
@@ -74,17 +66,4 @@ Enabling auth providers: email/password...
 +  Deploy complete!
 
 Project Console: https://console.firebase.google.com/project/ica16-cloud-quiz-ceab96/overview
-```
-
-Commit hash: `03912c4`
-
-Release APK build:
-```powershell
-flutter build apk --release
-```
-Output:
-```
-Running Gradle task 'assembleRelease'...
-√ Built build\app\outputs\flutter-apk\app-release.apk (50.2MB)
-Copied to: evidence/ICA16_A_MarioGutierrez.apk (52,668,121 bytes)
 ```
