@@ -19,11 +19,10 @@ are complete and verified:
 - Production release APK built: `evidence/ICA16_A_MarioGutierrez.apk` (50.2 MB).
 - `pubspec.lock` and FlutterFire `firebase_options.dart` are generated and verified.
 
-## Finish setup from your normal terminal
+## Automated setup script
 
-The assistant environment cannot download the missing packages or write to the
-installed Flutter SDK cache. Run the prepared setup script outside that restricted
-session, from this project folder:
+The setup script automates dependency checks, test-user creation, emulator verification,
+and the release build. Run it from this project folder:
 
 ```powershell
 node Complete-Setup.mjs
@@ -87,7 +86,7 @@ project configuration. FlutterFire should replace it before a production run.
 Commit the generated public client configuration: `firebase_options.dart`,
 `google-services.json`, and `GoogleService-Info.plist` when applicable. Service
 accounts, signing files, and environment secrets remain ignored. Local private
-rules also exclude assistant tooling and `.gitignore` files; these rules are not
+rules also exclude test credentials and `.gitignore` files; these rules are not
 pushed and must be reapplied in another clone.
 
 ## Files

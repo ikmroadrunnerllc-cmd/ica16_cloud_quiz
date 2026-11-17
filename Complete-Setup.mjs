@@ -43,8 +43,7 @@ try {
   const excludePath = excludeResult.stdout.trim();
   fs.mkdirSync(path.dirname(excludePath), { recursive: true });
   const existingRules = fs.existsSync(excludePath) ? fs.readFileSync(excludePath, 'utf8').split(/\r?\n/) : [];
-  const privateRules = ['.gitignore', '.local/', '.claude/', '.codex/', '.agents/',
-    'CLAUDE.md', 'CODEX.md', 'AGENTS.md', 'AI_USAGE.md', 'AI_Usage_Log.md'];
+  const privateRules = ['.gitignore', '.local/'];
   fs.appendFileSync(excludePath, '\n' + privateRules.filter(rule => !existingRules.includes(rule)).join('\n') + '\n');
   if (execute(git, ['check-ignore', '--quiet', '.local/test-users.json']).status !== 0) {
     throw new Error('Local test credentials are not ignored by Git.');

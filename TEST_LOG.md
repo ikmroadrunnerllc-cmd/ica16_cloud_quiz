@@ -76,7 +76,7 @@ Enabling auth providers: email/password...
 Project Console: https://console.firebase.google.com/project/ica16-cloud-quiz-ceab96/overview
 ```
 
-Commit hash: `584c929b788b89e1602c6ab0a063f722adb3ffef`
+Commit hash: `03912c4`
 
 Release APK build:
 ```powershell

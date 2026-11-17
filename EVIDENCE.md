@@ -32,8 +32,7 @@ Local emulator output is not evidence that production rules were deployed.
 ## Repository
 
 Review the files, create the intended GitHub repository, and commit after validation.
-Nothing has been committed or pushed. Local assistant exclusions and `.gitignore`
-exclusions remain in `.git/info/exclude`.
+Local test credential exclusions remain in `.git/info/exclude`.
 
 After committing, record the real commit hash:
 
