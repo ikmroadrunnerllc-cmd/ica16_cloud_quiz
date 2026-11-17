@@ -1,0 +1,32 @@
+{
+  "score": 4,
+  "summary": "Owner-scoped, immutable class-demo attempts with strict field validation. Eight local emulator test methods passed. Rules do not prove that a client-computed score was earned.",
+  "findings": [
+    {
+      "check": "Business logic versus rules",
+      "severity": "moderate",
+      "issue": "Any authenticated owner can fabricate an integer score within the allowed range.",
+      "recommendation": "Use trusted server-side scoring for a competitive or graded system that must resist modified clients."
+    },
+    {
+      "check": "Stored timestamp validation",
+      "severity": "fixed",
+      "issue": "The supplied candidate required an existing timestamp to equal the current read time.",
+      "recommendation": "Implemented stored timestamp type checks and a creation-only request.time comparison; later reads passed the emulator test."
+    },
+    {
+      "check": "Create-once transaction reads",
+      "severity": "fixed",
+      "issue": "An owner must be able to check a missing document before creating it in a transaction.",
+      "recommendation": "Implemented owner-only get permission for nonexistent attempt paths; missing-document reads passed the emulator test."
+    }
+  ],
+  "checks": {
+    "update_bypass": "Updates and deletes denied; emulator test passed.",
+    "authority_source": "UID comes from request.auth and must match the document path; isolation tests passed.",
+    "field_limits": "Exactly six fields with fixed or bounded values; schema tests passed.",
+    "type_safety": "Integers, variant string, and timestamp validated; malformed-type tests passed.",
+    "field_and_identity_security": "Both ownership and shape checked; cross-user and extra-field tests passed."
+  },
+  "deployment_status": "Not deployed; Firebase project selection is pending."
+}

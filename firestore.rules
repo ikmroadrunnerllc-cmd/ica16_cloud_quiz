@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function isValidAttempt(d) {
+      let fields = ['schemaVersion', 'variant', 'categoryId',
+                    'questionCount', 'correctCount', 'submittedAt'];
+      return d.keys().hasAll(fields)
+        && d.keys().hasOnly(fields)
+        && d.schemaVersion is int && d.schemaVersion == 1
+        && d.variant is string && d.variant == 'A'
+        && d.categoryId is int && d.categoryId == 9
+        && d.questionCount is int && d.questionCount == 10
+        && d.correctCount is int
+        && d.correctCount >= 0 && d.correctCount <= 10
+        && d.submittedAt is timestamp;
+    }
+
+    match /users/{uid}/attempts/{roundId} {
+      allow get: if isOwner(uid)
+        && (!exists(/databases/$(database)/documents/users/$(uid)/attempts/$(roundId))
+            || isValidAttempt(resource.data));
+      allow list: if false;
+      allow create: if isOwner(uid)
+        && isValidAttempt(request.resource.data)
+        && request.resource.data.submittedAt == request.time;
+      allow update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
