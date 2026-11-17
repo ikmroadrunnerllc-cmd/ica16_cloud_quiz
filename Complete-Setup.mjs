@@ -70,9 +70,12 @@ try {
   const saveState = () => fs.writeFileSync(statePath, JSON.stringify(state, null, 2));
   saveState();
   console.log(`Firebase project: ${projectId}; new database location: ${location}`);
-  console.log('Complete Firebase sign-in in your browser if prompted.');
-  if (execute(npx, ['-y', 'firebase-tools@latest', 'login'], true).status !== 0) {
-    throw new Error('Firebase sign-in did not complete.');
+  const loginCheck = execute(npx, ['-y', 'firebase-tools@latest', 'projects:list']);
+  if (loginCheck.status !== 0) {
+    console.log('Complete Firebase sign-in in your browser if prompted.');
+    if (execute(npx, ['-y', 'firebase-tools@latest', 'login'], true).status !== 0) {
+      throw new Error('Firebase sign-in did not complete.');
+    }
   }
   if (!existingProject && !state.projectCreated) {
     run(npx, ['-y', 'firebase-tools@latest', 'projects:create', projectId,

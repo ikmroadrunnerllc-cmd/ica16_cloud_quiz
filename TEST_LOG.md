@@ -50,11 +50,41 @@ These results do not establish that T01–T12 or G01–G03 passed on a device.
 
 ## Deployment evidence
 
-Firebase project ID: not selected.
+Firebase project ID: `ica16-cloud-quiz-ceab96`
 
-Rules deployment command and console output: not run. Paste the actual output
-after deployment, without test passwords or service-account credentials.
+Rules deployment command:
+```powershell
+npx -y firebase-tools@latest deploy --only auth,firestore:rules --project ica16-cloud-quiz-ceab96
+```
 
-Commit hash: not created.
+Deployment output:
+```
+=== Deploying to 'ica16-cloud-quiz-ceab96'...
 
-Release APK build/install evidence: not run.
+i  deploying firestore, auth
+i  firestore: ensuring required API firestore.googleapis.com is enabled...
++  firestore: required API firestore.googleapis.com is enabled
+i  cloud.firestore: checking firestore.rules for compilation errors...
++  cloud.firestore: rules file firestore.rules compiled successfully
+i  firestore: uploading rules firestore.rules...
+Enabling auth providers: email/password...
++  Auth providers enabled: email/password
++  firestore: released rules firestore.rules to cloud.firestore
+
++  Deploy complete!
+
+Project Console: https://console.firebase.google.com/project/ica16-cloud-quiz-ceab96/overview
+```
+
+Commit hash: `edeffa1` (prior to setup completion updates)
+
+Release APK build:
+```powershell
+flutter build apk --release
+```
+Output:
+```
+Running Gradle task 'assembleRelease'...
+√ Built build\app\outputs\flutter-apk\app-release.apk (50.2MB)
+Copied to: evidence/ICA16_A_MarioGutierrez.apk (52,668,121 bytes)
+```

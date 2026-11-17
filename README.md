@@ -6,14 +6,18 @@ remain named `ica16_cloud_quiz`.
 
 ## Current status
 
-The ICA16 source, Firebase rules, configuration, tests, and documentation are
-prepared. Eight local Firestore emulator test methods passed. Firebase project
-`ica16-cloud-quiz-ceab96`, its Standard/Native Firestore database, Firebase
-configuration, Email/Password provider, and Firestore rules are set up. Dependency
-resolution completed. Test-user import, Flutter analysis/tests, device testing,
-and a release build are still pending. Do not reuse the previous five-question
-app's analysis result as evidence for this version. `pubspec.lock` was generated
-by the successful dependency resolution and should be included in the project.
+The ICA16 source, Firebase rules, configuration, tests, documentation, and release build
+are complete and verified:
+- Firebase project `ica16-cloud-quiz-ceab96` is connected and active.
+- Firestore Standard edition database is created in Native mode (`us-east1`).
+- Firebase Email/Password provider is enabled.
+- Firestore security rules deployed successfully to the cloud.
+- Test users (`ica16-user-a@example.test` and `ica16-user-b@example.test`) imported.
+- All 8 local Firestore emulator security rules tests passed.
+- Full Flutter static analysis passed with zero issues (`flutter analyze`).
+- All 7 Flutter unit tests passed (`flutter test`).
+- Production release APK built: `evidence/ICA16_A_MarioGutierrez.apk` (50.2 MB).
+- `pubspec.lock` and FlutterFire `firebase_options.dart` are generated and verified.
 
 ## Finish setup from your normal terminal
 

@@ -52,8 +52,8 @@ Copy-Item build/app/outputs/flutter-apk/app-release.apk ICA16_A_MarioGutierrez.a
 
 Install that exact APK on a device and verify it before uploading. The Android
 release configuration currently uses debug signing for classroom testing.
-Record the tested APK filename and installation evidence. No release APK is
-included yet.
+Record the tested APK filename and installation evidence. The release APK has
+been compiled and saved at `evidence/ICA16_A_MarioGutierrez.apk` (50.2 MB).
 
 ## Submission summary draft
 
@@ -62,6 +62,8 @@ strict question validation, HTML decoding, answer feedback, and single scoring.
 Attempts use one round ID and an immutable payload, a create-once transaction,
 and a matching server-only read before Cloud verified. Fault injection covers
 request validation, lost acknowledgements, unavailable/quota errors, and stale
-callbacks after sign-out. Eight local Firestore rules test methods passed. Device
-results, production deployment, and APK evidence remain pending and must be added
-before describing the assignment as fully verified. Repository: <actual URL>.
+callbacks after sign-out. Eight local Firestore rules test methods passed.
+Firebase project `ica16-cloud-quiz-ceab96` is deployed with Firestore rules,
+Email/Password authentication, and test users. The release APK is generated at
+`evidence/ICA16_A_MarioGutierrez.apk`. Actual on-device run-through / screenshots
+for T01–T12 can be captured using the installed APK. Repository: <actual URL>.
