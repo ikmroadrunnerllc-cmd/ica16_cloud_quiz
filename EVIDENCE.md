@@ -65,4 +65,4 @@ callbacks after sign-out. Eight local Firestore rules test methods passed.
 Firebase project `ica16-cloud-quiz-ceab96` is deployed with Firestore rules,
 Email/Password authentication, and test users. The release APK is generated at
 `evidence/ICA16_A_MarioGutierrez.apk`. Actual on-device run-through / screenshots
-for T01–T12 can be captured using the installed APK. Repository: <actual URL>.
+for T01–T12 can be captured using the installed APK. Repository: https://github.com/ikmroadrunnerllc-cmd/ica16_cloud_quiz.
